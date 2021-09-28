@@ -9,22 +9,35 @@ from telegram.ext import (CommandHandler, ConversationHandler, Filters,
 
 THING, PHOTO, TITLE, CHOICE = range(4)
 
+# Пока не разобралась как сделать передачу словаря через функции
+# get_photo и thing_title, поэтому сделала description глобальным.
+description = {
+        'username': '',
+        'img_path': '',
+        'title': '',
+        'priority_users': [],
+        'location': '',
+        'json_name': '',
+}
+
 
 def start(update, context):
     reply_keyboard = [['Добавить вещь']]
-    update.message.reply_text(text="Привет! Я помогу тебе обменять что-то ненужное на очень нужное."
-                                   " Чтобы разместить вещь к обмену напиши - Добавить вещь",
-                              reply_markup=ReplyKeyboardMarkup(
-                                  reply_keyboard, one_time_keyboard=True,
-                              ),
-                              )
+    update.message.reply_text(
+        text="Привет! Я помогу тебе обменять что-то ненужное на очень нужное."
+             " Чтобы разместить вещь к обмену напиши - Добавить вещь",
+        reply_markup=ReplyKeyboardMarkup(
+            reply_keyboard, one_time_keyboard=True,
+        ),
+    )
     return THING
 
 
 def cancel(update, context):
     user = update.message.from_user
     update.message.reply_text(
-        'Bye! I hope we can talk again some day.', reply_markup=ReplyKeyboardRemove()
+        'Bye! I hope we can talk again some day.',
+        reply_markup=ReplyKeyboardRemove()
     )
 
 
@@ -46,19 +59,11 @@ def get_photo(update, context):
     basename = datetime.now().strftime('%y%m%d_%H%M%S')
     img_name = ''.join([basename, extension])
     img_path = img.download(Path('media/images', img_name))
-
-    description = {
-        'username': username,
-        'img_path': str(img_path),
-        'title': '',
-        'priority_users': [],
-        'datetime': basename,
-    }
-
     description_name = '.'.join([basename, 'json'])
-    Path('media/descriptions/').mkdir(parents=True, exist_ok=True)
-    with open(Path('media/descriptions', description_name), mode="w") as file:
-        json.dump(description, file, ensure_ascii=False, indent=4)
+
+    description['username'] = username
+    description['img_path'] = str(img_path)
+    description['json_name'] = description_name
 
     update.message.reply_text(
         'Пришли название вещи'
@@ -67,14 +72,20 @@ def get_photo(update, context):
 
 
 def thing_title(update, context):
+    description['title'] = update.message.text
+
     reply_keyboard = [['Добавить вещь', 'Найти вещь']]
     update.message.reply_text(
         text='Вы можете найти вещь или добавить еще одну вещь',
         reply_markup=ReplyKeyboardMarkup(
             reply_keyboard, one_time_keyboard=True,
         ),
-
     )
+
+    Path('media/descriptions/').mkdir(parents=True, exist_ok=True)
+    with open(Path('media/descriptions', description['json_name']), mode="w") as file:
+        json.dump(description, file, ensure_ascii=False, indent=4)
+
     return CHOICE
 
 
