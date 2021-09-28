@@ -1,6 +1,10 @@
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler
-from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
+from pathlib import Path
+from datetime import datetime
+
 from environs import Env
+from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
+from telegram.ext import (CommandHandler, ConversationHandler, Filters,
+                          MessageHandler, Updater)
 
 THING, PHOTO, TITLE, CHOICE = range(4)
 
@@ -34,8 +38,12 @@ def add_thing(update, context):
 
 def get_photo(update, context):
     user = update.message.from_user
-    photo_file = update.message.photo[-1].get_file()
-    photo_file.download('user_photo.jpg')
+    img = update.message.photo[-1].get_file()
+    Path('media/images/').mkdir(parents=True, exist_ok=True)
+    extension = Path(img['file_path']).suffix
+    basename = datetime.now().strftime('%y%m%d_%H%M%S')
+    img_name = ''.join([basename, extension])
+    img.download(Path('media/images', img_name))
     update.message.reply_text(
         'Пришли название вещи'
     )
