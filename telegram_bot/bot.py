@@ -1,5 +1,6 @@
 from pathlib import Path
 from datetime import datetime
+import json
 
 from environs import Env
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
@@ -37,13 +38,28 @@ def add_thing(update, context):
 
 
 def get_photo(update, context):
-    user = update.message.from_user
+    username = update.message.from_user['username']
+
     img = update.message.photo[-1].get_file()
     Path('media/images/').mkdir(parents=True, exist_ok=True)
     extension = Path(img['file_path']).suffix
     basename = datetime.now().strftime('%y%m%d_%H%M%S')
     img_name = ''.join([basename, extension])
-    img.download(Path('media/images', img_name))
+    img_path = img.download(Path('media/images', img_name))
+
+    description = {
+        'username': username,
+        'img_path': str(img_path),
+        'title': '',
+        'priority_users': [],
+        'datetime': basename,
+    }
+
+    description_name = '.'.join([basename, 'json'])
+    Path('media/descriptions/').mkdir(parents=True, exist_ok=True)
+    with open(Path('media/descriptions', description_name), mode="w") as file:
+        json.dump(description, file, ensure_ascii=False, indent=4)
+
     update.message.reply_text(
         'Пришли название вещи'
     )
