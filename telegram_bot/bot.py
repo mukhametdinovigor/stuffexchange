@@ -1,5 +1,6 @@
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
+from environs import Env
 
 THING, PHOTO, TITLE, CHOICE = range(4)
 
@@ -63,7 +64,9 @@ def make_choice(update, context):
 
 
 def main():
-    updater = Updater(token='2048621014:AAFbjLjccC0-N2HsKTNIjjl8YbQcOVOs0uU', use_context=True)
+    env = Env()
+    env.read_env()
+    updater = Updater(token=env.str('BOT_TOKEN'), use_context=True)
     dispatcher = updater.dispatcher
 
     conv_handler = ConversationHandler(
