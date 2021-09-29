@@ -68,16 +68,15 @@ def add_thing(update, context):
 def get_photo(update, context):
 
     img = update.message.photo[-1].get_file()
-    Path('media/images/').mkdir(parents=True, exist_ok=True)
+    
     extension = Path(img['file_path']).suffix
     basename = datetime.now().strftime('%y%m%d_%H%M%S')
     img_name = ''.join([basename, extension])
     img_path = img.download(Path('media/images', img_name))
-    description_name = '.'.join([basename, 'json'])
 
     context.user_data['username'] = update.message.from_user['username']
+    context.user_data['chat_id'] = update.message.from_user['id']
     context.user_data['img_path'] = str(img_path)
-    context.user_data['json_name'] = description_name
 
     update.message.reply_text(
         'Пришли название вещи'
@@ -95,10 +94,11 @@ def thing_title(update, context):
             reply_keyboard, one_time_keyboard=True,
         ),
     )
-
-    Path('media/descriptions/').mkdir(parents=True, exist_ok=True)
-    with open(Path('media/descriptions', context.user_data['json_name']), mode='w') as file:
-        json.dump(context.user_data, file, ensure_ascii=False, indent=4)
+    with open('media/descriptions.json', mode='r+') as file:
+        descriptions = json.load(file)
+        descriptions.append(context.user_data)
+        file.seek(0)
+        json.dump(descriptions, file, ensure_ascii=False, indent=4)
 
     return CHOOSING
 
@@ -108,6 +108,13 @@ def main():
     env.read_env()
     updater = Updater(token=env.str('BOT_TOKEN'), use_context=True)
     dispatcher = updater.dispatcher
+
+    Path('media/images/').mkdir(parents=True, exist_ok=True)
+    try:
+        with open('media/descriptions.json', mode='x') as file:
+            file.write('[]')
+    except FileExistsError:
+        pass
 
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('start', start)],
