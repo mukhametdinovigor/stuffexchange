@@ -34,7 +34,7 @@ def cancel(update, context):
 
 
 def add_thing(update, context):
-    user = update.message.from_user
+    user = update.message.from_user['username']
     if update.message.text == 'Добавить вещь':
         update.message.reply_text(
             text='Пришли фото вещи',
@@ -42,18 +42,30 @@ def add_thing(update, context):
         )
         return PHOTO
 
-    # Сейчас работает так, что можно написать 'Найти вещь' даже до загрузки своей вещи
     if update.message.text == 'Найти вещь':
         reply_keyboard = [['Обменяться', 'Добавить вещь', 'Найти вещь']]
-        stuff = random.choice(os.listdir('media/descriptions'))
 
-        with open(Path('media/descriptions', stuff), mode='r') as file:
-            stuff_desc = json.load(file)
-        with open(stuff_desc['img_path'], mode='rb') as file:
+        with open('media/descriptions.json', mode='r') as file:
+            descriptions = json.load(file)
+        try:
+            del descriptions[user]
+        except KeyError:
+            update.message.reply_text(
+                text='Для доступа к другим вещам, сначала добавь свою.',
+                reply_markup=ReplyKeyboardMarkup(
+                    [['Добавить вещь']], one_time_keyboard=True,
+                ),
+            )  
+            return THING
+        
+        user_desc = random.choice(list(descriptions.values()))
+        thing = random.choice(user_desc['things'])
+
+        with open(thing['img_path'], mode='rb') as file:
             img = file.read()
 
         update.message.reply_text(
-            text=stuff_desc['title'],
+            text=thing['title'],
             reply_markup=ReplyKeyboardRemove(),
         )
         update.message.reply_photo(
