@@ -9,17 +9,6 @@ from telegram.ext import (CommandHandler, ConversationHandler, Filters,
 
 THING, PHOTO, TITLE, CHOOSING = range(4)
 
-# Пока не разобралась как сделать передачу словаря через функции
-# get_photo и thing_title, поэтому сделала description глобальным.
-description = {
-        'username': '',
-        'img_path': '',
-        'title': '',
-        'priority_users': [],
-        'location': '',
-        'json_name': '',
-}
-
 
 def start(update, context):
     reply_keyboard = [['Добавить вещь']]
@@ -52,8 +41,7 @@ def add_thing(update, context):
 
 
 def get_photo(update, context):
-    username = update.message.from_user['username']
-
+  
     img = update.message.photo[-1].get_file()
     Path('media/images/').mkdir(parents=True, exist_ok=True)
     extension = Path(img['file_path']).suffix
@@ -62,9 +50,9 @@ def get_photo(update, context):
     img_path = img.download(Path('media/images', img_name))
     description_name = '.'.join([basename, 'json'])
 
-    description['username'] = username
-    description['img_path'] = str(img_path)
-    description['json_name'] = description_name
+    context.user_data['username'] = update.message.from_user['username']
+    context.user_data['img_path'] = str(img_path)
+    context.user_data['json_name'] = description_name
 
     update.message.reply_text(
         'Пришли название вещи'
@@ -73,7 +61,7 @@ def get_photo(update, context):
 
 
 def thing_title(update, context):
-    description['title'] = update.message.text
+    context.user_data['title'] = update.message.text
 
     reply_keyboard = [['Добавить вещь', 'Найти вещь']]
     update.message.reply_text(
@@ -84,8 +72,8 @@ def thing_title(update, context):
     )
 
     Path('media/descriptions/').mkdir(parents=True, exist_ok=True)
-    with open(Path('media/descriptions', description['json_name']), mode="w") as file:
-        json.dump(description, file, ensure_ascii=False, indent=4)
+    with open(Path('media/descriptions', context.user_data['json_name']), mode="w") as file:
+        json.dump(context.user_data, file, ensure_ascii=False, indent=4)
 
     return CHOOSING
 
