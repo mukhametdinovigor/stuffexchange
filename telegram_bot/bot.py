@@ -1,6 +1,8 @@
-from pathlib import Path
-from datetime import datetime
 import json
+import os
+import random
+from datetime import datetime
+from pathlib import Path
 
 from environs import Env
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
@@ -39,9 +41,30 @@ def add_thing(update, context):
         )
         return PHOTO
 
+    if update.message.text == 'Найти вещь':
+        reply_keyboard = [['Обменяться', 'Следующая вещь']]
+        stuff = random.choice(os.listdir('media/descriptions'))
+
+        with open(Path('media/descriptions', stuff), mode='r') as file:
+            stuff_desc = json.load(file)
+        with open(stuff_desc['img_path'], mode='rb') as file:
+            img = file.read()
+
+        update.message.reply_text(
+            text=stuff_desc['title'],
+            reply_markup=ReplyKeyboardRemove(),
+        )
+        update.message.reply_photo(
+            photo=img,
+            reply_markup=ReplyKeyboardMarkup(
+                reply_keyboard, one_time_keyboard=True,
+            ),
+        )
+        return PHOTO
+
 
 def get_photo(update, context):
-  
+
     img = update.message.photo[-1].get_file()
     Path('media/images/').mkdir(parents=True, exist_ok=True)
     extension = Path(img['file_path']).suffix
@@ -72,7 +95,7 @@ def thing_title(update, context):
     )
 
     Path('media/descriptions/').mkdir(parents=True, exist_ok=True)
-    with open(Path('media/descriptions', context.user_data['json_name']), mode="w") as file:
+    with open(Path('media/descriptions', context.user_data['json_name']), mode='w') as file:
         json.dump(context.user_data, file, ensure_ascii=False, indent=4)
 
     return CHOOSING
@@ -91,7 +114,7 @@ def main():
                 MessageHandler(
                     Filters.regex('^(Добавить вещь|Найти вещь)$'), add_thing
                 )
-                ],
+            ],
             THING: [MessageHandler(Filters.text, add_thing)],
             PHOTO: [MessageHandler(Filters.photo, get_photo)],
             TITLE: [MessageHandler(Filters.text, thing_title)],
