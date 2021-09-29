@@ -41,6 +41,7 @@ def add_thing(update, context):
         )
         return PHOTO
 
+    # Сейчас работает так, что можно написать 'Найти вещь' даже до загрузки своей вещи
     if update.message.text == 'Найти вещь':
         reply_keyboard = [['Обменяться', 'Следующая вещь']]
         stuff = random.choice(os.listdir('media/descriptions'))
