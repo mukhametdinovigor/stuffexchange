@@ -13,10 +13,11 @@ THING, PHOTO, TITLE, CHOOSING = range(4)
 
 
 def start(update, context):
-    reply_keyboard = [['Добавить вещь']]
+    reply_keyboard = [['Добавить вещь', 'Найти вещь']]
     update.message.reply_text(
-        text="Привет! Я помогу тебе обменять что-то ненужное на очень нужное."
-             " Чтобы разместить вещь к обмену напиши - Добавить вещь",
+        text="Привет! Я помогу тебе обменять что-то ненужное на очень нужное.\n"
+             "Чтобы разместить вещь к обмену нажми - Добавить вещь\n"
+             "Если ты уже размещал вещи и хочешь найти вариант для обмена нажми - Найти вещь",
         reply_markup=ReplyKeyboardMarkup(
             reply_keyboard, one_time_keyboard=True,
         ),
@@ -61,7 +62,7 @@ def add_thing(update, context):
                 reply_keyboard, one_time_keyboard=True,
             ),
         )
-        return PHOTO
+        return THING
 
 
 def get_photo(update, context):
