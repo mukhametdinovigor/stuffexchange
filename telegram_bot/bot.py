@@ -74,8 +74,6 @@ def get_photo(update, context):
     img_name = ''.join([basename, extension])
     img_path = img.download(Path('media/images', img_name))
 
-    context.user_data['username'] = update.message.from_user['username']
-    context.user_data['chat_id'] = update.message.from_user['id']
     context.user_data['img_path'] = str(img_path)
 
     update.message.reply_text(
@@ -85,7 +83,12 @@ def get_photo(update, context):
 
 
 def thing_title(update, context):
-    context.user_data['title'] = update.message.text
+    user = update.message.from_user['username']
+    thing_desc = {
+        'title': update.message.text,
+        'img_path': context.user_data['img_path'],
+        'priority_users': []
+    }
 
     reply_keyboard = [['Добавить вещь', 'Найти вещь']]
     update.message.reply_text(
@@ -96,7 +99,16 @@ def thing_title(update, context):
     )
     with open('media/descriptions.json', mode='r+') as file:
         descriptions = json.load(file)
-        descriptions.append(context.user_data)
+
+        if user in descriptions:
+            descriptions[user]['things'].append(thing_desc)
+        else:
+            descriptions[user] = {
+                'chat_id': update.message.from_user['id'],
+                'location': '',
+                'things': [thing_desc]
+            }
+
         file.seek(0)
         json.dump(descriptions, file, ensure_ascii=False, indent=4)
 
@@ -112,7 +124,7 @@ def main():
     Path('media/images/').mkdir(parents=True, exist_ok=True)
     try:
         with open('media/descriptions.json', mode='x') as file:
-            file.write('[]')
+            file.write('{}')
     except FileExistsError:
         pass
 
