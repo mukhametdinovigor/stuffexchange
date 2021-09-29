@@ -7,7 +7,7 @@ from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import (CommandHandler, ConversationHandler, Filters,
                           MessageHandler, Updater)
 
-THING, PHOTO, TITLE, CHOICE = range(4)
+THING, PHOTO, TITLE, CHOOSING = range(4)
 
 # Пока не разобралась как сделать передачу словаря через функции
 # get_photo и thing_title, поэтому сделала description глобальным.
@@ -43,11 +43,12 @@ def cancel(update, context):
 
 def add_thing(update, context):
     user = update.message.from_user
-    update.message.reply_text(
-        text='Пришли фото вещи',
-        reply_markup=ReplyKeyboardRemove(),
-    )
-    return PHOTO
+    if update.message.text == 'Добавить вещь':
+        update.message.reply_text(
+            text='Пришли фото вещи',
+            reply_markup=ReplyKeyboardRemove(),
+        )
+        return PHOTO
 
 
 def get_photo(update, context):
@@ -86,16 +87,7 @@ def thing_title(update, context):
     with open(Path('media/descriptions', description['json_name']), mode="w") as file:
         json.dump(description, file, ensure_ascii=False, indent=4)
 
-    return CHOICE
-
-
-def make_choice(update, context):
-    title = update.message.text
-    update.message.reply_text()
-    if title == 'Добавить вещь':
-        return THING
-    elif title == 'Найти вещь':
-        return THING
+    return CHOOSING
 
 
 def main():
@@ -107,10 +99,14 @@ def main():
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('start', start)],
         states={
+            CHOOSING: [
+                MessageHandler(
+                    Filters.regex('^(Добавить вещь|Найти вещь)$'), add_thing
+                )
+                ],
             THING: [MessageHandler(Filters.text, add_thing)],
             PHOTO: [MessageHandler(Filters.photo, get_photo)],
             TITLE: [MessageHandler(Filters.text, thing_title)],
-            CHOICE: [MessageHandler(Filters.text, make_choice)],
         },
         fallbacks=[CommandHandler('cancel', cancel)],
     )
