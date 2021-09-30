@@ -13,12 +13,15 @@ THING, PHOTO, TITLE, CHOOSING = range(4)
 
 def get_priority_users(descriptions, user):
     priority_users = set()
-    things = descriptions[user]['things']
-    for thing in things:
-        if thing['priority_users']:
-            for user in thing['priority_users']:
-                priority_users.add(user)
-    return priority_users
+    try:
+        things = descriptions[user]['things']
+        for thing in things:
+            if thing['priority_users']:
+                for user in thing['priority_users']:
+                    priority_users.add(user)
+        return priority_users
+    except KeyError:
+        return priority_users
 
 
 def start(update, context):
@@ -57,7 +60,7 @@ def add_thing(update, context):
         )
         return PHOTO
 
-    if update.message.text == 'Найти вещь':
+    elif update.message.text == 'Найти вещь':
         reply_keyboard = [['Обменяться', 'Добавить вещь', 'Найти вещь']]
         with open('media/descriptions.json', mode='r') as file:
             descriptions = json.load(file)
