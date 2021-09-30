@@ -24,6 +24,14 @@ def get_priority_users(descriptions, user):
         return priority_users
 
 
+def get_thing_attrs(descriptions):
+    user_desc = random.choice(list(descriptions.values()))
+    thing = random.choice(user_desc['things'])
+    with open(thing['img_path'], mode='rb') as file:
+        img = file.read()
+    return thing, img
+
+
 def start(update, context):
     if not update.message.from_user.username:
         update.message.reply_text(
@@ -78,12 +86,7 @@ def add_thing(update, context):
                 )
                 return THING
 
-            user_desc = random.choice(list(descriptions.values()))
-            thing = random.choice(user_desc['things'])
-
-            with open(thing['img_path'], mode='rb') as file:
-                img = file.read()
-
+            thing, img = get_thing_attrs(descriptions)
             update.message.reply_text(
                 text=thing['title'],
                 reply_markup=ReplyKeyboardRemove(),
