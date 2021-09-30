@@ -25,11 +25,11 @@ def get_priority_users(descriptions, user):
 
 
 def get_thing_attrs(descriptions):
-    user_desc = random.choice(list(descriptions.values()))
-    thing = random.choice(user_desc['things'])
+    user = random.choice(list(descriptions.keys()))
+    thing = random.choice(descriptions[user]['things'])
     with open(thing['img_path'], mode='rb') as file:
         img = file.read()
-    return thing, img
+    return thing, img, user
 
 
 def start(update, context):
@@ -74,11 +74,13 @@ def add_thing(update, context):
             descriptions = json.load(file)
         priority_users = get_priority_users(descriptions, user)
         if priority_users:
-            for user in priority_users:
+            for priority_user in priority_users:
                 descriptions = {
-                    user: descriptions[user]
+                    priority_user: descriptions[priority_user]
                 }
-                thing, img = get_thing_attrs(descriptions)
+                thing, img, user_of_thing = get_thing_attrs(descriptions)
+                context.user_data.clear()
+                context.user_data[user_of_thing] = user_of_thing
                 update.message.reply_text(
                     text=thing['title'],
                     reply_markup=ReplyKeyboardRemove(),
@@ -101,7 +103,9 @@ def add_thing(update, context):
                 )
                 return THING
 
-            thing, img = get_thing_attrs(descriptions)
+            thing, img, user_of_thing = get_thing_attrs(descriptions)
+            context.user_data.clear()
+            context.user_data[user_of_thing] = user_of_thing
             update.message.reply_text(
                 text=thing['title'],
                 reply_markup=ReplyKeyboardRemove(),
@@ -113,6 +117,26 @@ def add_thing(update, context):
                 ),
             )
             return THING
+    elif update.message.text == 'Обменяться':
+        reply_keyboard = [['Добавить вещь', 'Найти вещь']]
+        with open('media/descriptions.json', mode='r+') as file:
+            descriptions = json.load(file)
+            user_wanted_to_change = list(context.user_data.keys())[0]
+            user_wanted_to_change_chat_id = descriptions[user_wanted_to_change]["chat_id"]
+            if user_wanted_to_change in get_priority_users(descriptions, update.effective_user.username):
+                context.bot.send_message(chat_id=update.effective_chat.id, text="bingo")
+                context.bot.send_message(chat_id=user_wanted_to_change_chat_id, text="bingo")
+            else:
+                descriptions[user_wanted_to_change]['things'][0]["priority_users"].append(update.effective_user.username)
+                file.seek(0)
+                json.dump(descriptions, file, ensure_ascii=False, indent=4)
+                update.message.reply_text(
+                    text='Вы выбрали вещь для обмена.',
+                    reply_markup=ReplyKeyboardMarkup(
+                        reply_keyboard, one_time_keyboard=True,
+                    ),
+                )
+                return THING
 
 
 def get_photo(update, context):
