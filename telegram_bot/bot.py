@@ -12,16 +12,12 @@ THING, PHOTO, TITLE, CHOOSING = range(4)
 
 
 def get_priority_users(descriptions, user):
-    priority_users = set()
-    try:
-        things = descriptions[user]['things']
-        for thing in things:
-            if thing['priority_users']:
-                for user in thing['priority_users']:
-                    priority_users.add(user)
-        return priority_users
-    except KeyError:
-        return priority_users
+    priority_users = []
+    things = descriptions[user]['things']
+    for thing in things:
+        priority_users.extend(thing['priority_users'])
+    
+    return set(priority_users)
 
 
 def get_thing_attrs(descriptions):
@@ -73,7 +69,7 @@ def add_thing(update, context):
         with open('media/descriptions.json', mode='r') as file:
             descriptions = json.load(file)
         priority_users = get_priority_users(descriptions, user)
-        if priority_users:
+        if priority_users: # Сейчас работает так, что показывает только вещи приоретеных пользователей, если они есть
             for priority_user in priority_users:
                 descriptions = {
                     priority_user: descriptions[priority_user]
