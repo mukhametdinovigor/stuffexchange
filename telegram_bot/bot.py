@@ -72,8 +72,23 @@ def add_thing(update, context):
         reply_keyboard = [['Обменяться', 'Добавить вещь', 'Найти вещь']]
         with open('media/descriptions.json', mode='r') as file:
             descriptions = json.load(file)
-        if get_priority_users(descriptions, user):
-            pass # здесь реализую показ вещей приоритетного пользователя
+        priority_users = get_priority_users(descriptions, user)
+        if priority_users:
+            for user in priority_users:
+                descriptions = {
+                    user: descriptions[user]
+                }
+                thing, img = get_thing_attrs(descriptions)
+                update.message.reply_text(
+                    text=thing['title'],
+                    reply_markup=ReplyKeyboardRemove(),
+                )
+                update.message.reply_photo(
+                    photo=img,
+                    reply_markup=ReplyKeyboardMarkup(
+                        reply_keyboard, one_time_keyboard=True,
+                    ),
+                )
         else:
             try:
                 del descriptions[user]
