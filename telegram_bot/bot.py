@@ -11,6 +11,16 @@ from telegram.ext import (CommandHandler, ConversationHandler, Filters,
 THING, PHOTO, TITLE, CHOOSING = range(4)
 
 
+def get_priority_users(descriptions, user):
+    priority_users = set()
+    things = descriptions[user]['things']
+    for thing in things:
+        if thing['priority_users']:
+            for user in thing['priority_users']:
+                priority_users.add(user)
+    return priority_users
+
+
 def start(update, context):
     if not update.message.from_user.username:
         update.message.reply_text(
@@ -49,37 +59,39 @@ def add_thing(update, context):
 
     if update.message.text == 'Найти вещь':
         reply_keyboard = [['Обменяться', 'Добавить вещь', 'Найти вещь']]
-
         with open('media/descriptions.json', mode='r') as file:
             descriptions = json.load(file)
-        try:
-            del descriptions[user]
-        except KeyError:
+        if get_priority_users(descriptions, user):
+            pass # здесь реализую показ вещей приоритетного пользователя
+        else:
+            try:
+                del descriptions[user]
+            except KeyError:
+                update.message.reply_text(
+                    text='Для доступа к другим вещам, сначала добавь свою.',
+                    reply_markup=ReplyKeyboardMarkup(
+                        [['Добавить вещь']], one_time_keyboard=True,
+                    ),
+                )
+                return THING
+
+            user_desc = random.choice(list(descriptions.values()))
+            thing = random.choice(user_desc['things'])
+
+            with open(thing['img_path'], mode='rb') as file:
+                img = file.read()
+
             update.message.reply_text(
-                text='Для доступа к другим вещам, сначала добавь свою.',
+                text=thing['title'],
+                reply_markup=ReplyKeyboardRemove(),
+            )
+            update.message.reply_photo(
+                photo=img,
                 reply_markup=ReplyKeyboardMarkup(
-                    [['Добавить вещь']], one_time_keyboard=True,
+                    reply_keyboard, one_time_keyboard=True,
                 ),
             )
             return THING
-
-        user_desc = random.choice(list(descriptions.values()))
-        thing = random.choice(user_desc['things'])
-
-        with open(thing['img_path'], mode='rb') as file:
-            img = file.read()
-
-        update.message.reply_text(
-            text=thing['title'],
-            reply_markup=ReplyKeyboardRemove(),
-        )
-        update.message.reply_photo(
-            photo=img,
-            reply_markup=ReplyKeyboardMarkup(
-                reply_keyboard, one_time_keyboard=True,
-            ),
-        )
-        return THING
 
 
 def get_photo(update, context):
