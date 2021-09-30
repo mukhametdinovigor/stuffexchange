@@ -55,7 +55,7 @@ def cancel(update, context):
     )
 
 
-def add_thing(update, context):
+def handling_thing(update, context):
     user = update.message.from_user['username']
 
     if update.message.text == 'Добавить вещь':
@@ -215,10 +215,10 @@ def main():
         states={
             CHOOSING: [
                 MessageHandler(
-                    Filters.regex('^(Добавить вещь|Найти вещь)$'), add_thing
+                    Filters.regex('^(Добавить вещь|Найти вещь)$'), handling_thing
                 )
             ],
-            THING: [MessageHandler(Filters.text, add_thing)],
+            THING: [MessageHandler(Filters.text, handling_thing)],
             PHOTO: [MessageHandler(Filters.photo, get_photo)],
             TITLE: [MessageHandler(Filters.text, thing_title)],
         },
