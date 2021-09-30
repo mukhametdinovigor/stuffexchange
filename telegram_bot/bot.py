@@ -12,7 +12,12 @@ THING, PHOTO, TITLE, CHOOSING = range(4)
 
 
 def get_priority_users(descriptions, user):
-    return set(descriptions[user]['priority_users'])
+    try:
+        priority_users = set(descriptions[user]['priority_users'])
+        return priority_users
+    except KeyError:
+        priority_users = set()
+        return priority_users
 
 
 def get_thing_attrs(descriptions):
