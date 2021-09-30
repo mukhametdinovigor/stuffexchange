@@ -16,7 +16,6 @@ def get_priority_users(descriptions, user):
     things = descriptions[user]['things']
     for thing in things:
         priority_users.extend(thing['priority_users'])
-    
     return set(priority_users)
 
 
@@ -29,12 +28,7 @@ def get_thing_attrs(descriptions):
 
 
 def start(update, context):
-    if not update.message.from_user.username:
-        update.message.reply_text(
-            text='Заполни свой username в настройках Telegram и нажми /start',
-            reply_markup=ReplyKeyboardRemove()
-            )
-    else:
+    if update.message.from_user.username:
         reply_keyboard = [['Добавить вещь', 'Найти вещь']]
         update.message.reply_text(
             text="Привет! Я помогу тебе обменять что-то ненужное на очень нужное.\n"
@@ -45,6 +39,11 @@ def start(update, context):
             ),
         )
         return THING
+    else:
+        update.message.reply_text(
+            text='Заполни свой username в настройках Telegram и нажми /start',
+            reply_markup=ReplyKeyboardRemove()
+        )
 
 
 def cancel(update, context):
@@ -69,7 +68,7 @@ def add_thing(update, context):
         with open('media/descriptions.json', mode='r') as file:
             descriptions = json.load(file)
         priority_users = get_priority_users(descriptions, user)
-        if priority_users: # Сейчас работает так, что показывает только вещи приоретеных пользователей, если они есть
+        if priority_users:  # Сейчас работает так, что показывает только вещи приоретеных пользователей, если они есть
             for priority_user in priority_users:
                 descriptions = {
                     priority_user: descriptions[priority_user]
