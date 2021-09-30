@@ -119,8 +119,17 @@ def add_thing(update, context):
             user_wanted_to_change = list(context.user_data.keys())[0]
             user_wanted_to_change_chat_id = descriptions[user_wanted_to_change]["chat_id"]
             if user_wanted_to_change in get_priority_users(descriptions, update.effective_user.username):
-                context.bot.send_message(chat_id=update.effective_chat.id, text="bingo")
-                context.bot.send_message(chat_id=user_wanted_to_change_chat_id, text="bingo")
+                context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text='Ура! Можете связаться с пользователем @{} для обмена.'.format(
+                        user_wanted_to_change   
+                    )
+                )
+                context.bot.send_message(chat_id=user_wanted_to_change_chat_id,
+                    text='Ура! Можете связаться с пользователем @{} для обмена.'.format(
+                        update.effective_chat.username
+                    )
+                )
             else:
                 descriptions[user_wanted_to_change]['things'][0]["priority_users"].append(update.effective_user.username)
                 file.seek(0)
