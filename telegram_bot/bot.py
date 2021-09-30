@@ -12,11 +12,7 @@ THING, PHOTO, TITLE, CHOOSING = range(4)
 
 
 def get_priority_users(descriptions, user):
-    priority_users = []
-    things = descriptions[user]['things']
-    for thing in things:
-        priority_users.extend(thing['priority_users'])
-    return set(priority_users)
+    return set(descriptions[user]['priority_users'])
 
 
 def get_thing_attrs(descriptions):
@@ -56,6 +52,7 @@ def cancel(update, context):
 
 def add_thing(update, context):
     user = update.message.from_user['username']
+
     if update.message.text == 'Добавить вещь':
         update.message.reply_text(
             text='Пришли фото вещи',
@@ -64,10 +61,12 @@ def add_thing(update, context):
         return PHOTO
 
     elif update.message.text == 'Найти вещь':
+
         reply_keyboard = [['Обменяться', 'Добавить вещь', 'Найти вещь']]
         with open('media/descriptions.json', mode='r') as file:
             descriptions = json.load(file)
         priority_users = get_priority_users(descriptions, user)
+
         if priority_users:  # Сейчас работает так, что показывает только вещи приоретеных пользователей, если они есть
             for priority_user in priority_users:
                 descriptions = {
@@ -112,26 +111,27 @@ def add_thing(update, context):
                 ),
             )
             return THING
+
     elif update.message.text == 'Обменяться':
         reply_keyboard = [['Добавить вещь', 'Найти вещь']]
         with open('media/descriptions.json', mode='r+') as file:
             descriptions = json.load(file)
-            user_wanted_to_change = list(context.user_data.keys())[0]
-            user_wanted_to_change_chat_id = descriptions[user_wanted_to_change]["chat_id"]
-            if user_wanted_to_change in get_priority_users(descriptions, update.effective_user.username):
+            user_to_change = list(context.user_data.keys())[0]
+            user_to_change_chat_id = descriptions[user_to_change]["chat_id"]
+            if user_to_change in get_priority_users(descriptions, update.effective_user.username):
                 context.bot.send_message(
                     chat_id=update.effective_chat.id,
                     text='Ура! Можете связаться с пользователем @{} для обмена.'.format(
-                        user_wanted_to_change   
+                        user_to_change   
                     )
                 )
-                context.bot.send_message(chat_id=user_wanted_to_change_chat_id,
+                context.bot.send_message(chat_id=user_to_change_chat_id,
                     text='Ура! Можете связаться с пользователем @{} для обмена.'.format(
                         update.effective_chat.username
                     )
                 )
             else:
-                descriptions[user_wanted_to_change]['things'][0]["priority_users"].append(update.effective_user.username)
+                descriptions[user_to_change]["priority_users"].append(update.effective_user.username)
                 file.seek(0)
                 json.dump(descriptions, file, ensure_ascii=False, indent=4)
                 update.message.reply_text(
@@ -163,8 +163,7 @@ def thing_title(update, context):
     user = update.message.from_user['username']
     thing_desc = {
         'title': update.message.text,
-        'img_path': context.user_data['img_path'],
-        'priority_users': []
+        'img_path': context.user_data['img_path']
     }
 
     reply_keyboard = [['Добавить вещь', 'Найти вещь']]
@@ -183,7 +182,8 @@ def thing_title(update, context):
             descriptions[user] = {
                 'chat_id': update.message.from_user['id'],
                 'location': '',
-                'things': [thing_desc]
+                'things': [thing_desc],
+                'priority_users': []
             }
 
         file.seek(0)
