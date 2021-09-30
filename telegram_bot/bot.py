@@ -1,5 +1,4 @@
 import json
-import os
 import random
 from datetime import datetime
 from pathlib import Path
@@ -13,16 +12,22 @@ THING, PHOTO, TITLE, CHOOSING = range(4)
 
 
 def start(update, context):
-    reply_keyboard = [['Добавить вещь', 'Найти вещь']]
-    update.message.reply_text(
-        text="Привет! Я помогу тебе обменять что-то ненужное на очень нужное.\n"
-             "Чтобы разместить вещь к обмену нажми - Добавить вещь\n"
-             "Если ты уже размещал вещи и хочешь найти вариант для обмена нажми - Найти вещь",
-        reply_markup=ReplyKeyboardMarkup(
-            reply_keyboard, one_time_keyboard=True,
-        ),
-    )
-    return THING
+    if not update.message.from_user.username:
+        update.message.reply_text(
+            text='Заполни свой username в настройках Telegram и нажми /start',
+            reply_markup=ReplyKeyboardRemove()
+            )
+    else:
+        reply_keyboard = [['Добавить вещь', 'Найти вещь']]
+        update.message.reply_text(
+            text="Привет! Я помогу тебе обменять что-то ненужное на очень нужное.\n"
+                 "Чтобы разместить вещь к обмену нажми - Добавить вещь\n"
+                 "Если ты уже размещал вещи и хочешь найти вариант для обмена нажми - Найти вещь",
+            reply_markup=ReplyKeyboardMarkup(
+                reply_keyboard, one_time_keyboard=True,
+            ),
+        )
+        return THING
 
 
 def cancel(update, context):
@@ -55,9 +60,9 @@ def add_thing(update, context):
                 reply_markup=ReplyKeyboardMarkup(
                     [['Добавить вещь']], one_time_keyboard=True,
                 ),
-            )  
+            )
             return THING
-        
+
         user_desc = random.choice(list(descriptions.values()))
         thing = random.choice(user_desc['things'])
 
@@ -78,9 +83,8 @@ def add_thing(update, context):
 
 
 def get_photo(update, context):
-
     img = update.message.photo[-1].get_file()
-    
+
     extension = Path(img['file_path']).suffix
     basename = datetime.now().strftime('%y%m%d_%H%M%S')
     img_name = ''.join([basename, extension])
