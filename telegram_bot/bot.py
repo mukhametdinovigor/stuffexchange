@@ -8,7 +8,7 @@ from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import (CommandHandler, ConversationHandler, Filters,
                           MessageHandler, Updater)
 
-THING, PHOTO, TITLE, CHOOSING = range(4)
+THING, LOCATION, PHOTO, TITLE, CHOOSING = range(5)
 
 
 def get_priority_users(descriptions, user):
@@ -31,11 +31,12 @@ def get_thing_attrs(user_desc):
 def start(update, context):
     user = update.message.from_user.username
     if user:
-        reply_keyboard = [['Добавить вещь', 'Найти вещь']]
+        reply_keyboard = [['Добавить вещь', 'Найти вещь', 'Поделиться локацией']]
         update.message.reply_text(
             text="Привет! Я помогу тебе обменять что-то ненужное на очень нужное.\n"
                  "Чтобы разместить вещь к обмену нажми - Добавить вещь\n"
-                 "Если ты уже размещал вещи и хочешь найти вариант для обмена нажми - Найти вещь",
+                 "Если ты уже размещал вещи и хочешь найти вариант для обмена нажми - Найти вещь\n"
+                 "Если ты хочешь видеть расстояние до вещи жми - Поделиться локацией",
             reply_markup=ReplyKeyboardMarkup(
                 reply_keyboard, one_time_keyboard=True,
             ),
@@ -161,7 +162,43 @@ def handling_thing(update, context):
                     ),
                 )
                 return THING
+    
+    elif update.message.text == 'Поделиться локацией':
+        update.message.reply_text(
+                    text='Отправьте свою геопозицию',
+                    reply_markup=ReplyKeyboardRemove()
+                )
+        return LOCATION
 
+
+def get_location(update, context):
+    user = update.message.from_user['username']
+    reply_keyboard = [['Добавить вещь', 'Найти вещь']]
+    with open('media/descriptions.json', mode='r+') as file:
+        descriptions = json.load(file)
+        location = {
+            'longitude': update.message['location']['longitude'],
+            'latitude': update.message['location']['latitude'],
+
+        }
+        if user in descriptions:
+            descriptions[user]['location'] = location
+        else:
+            descriptions[user] = {
+                'chat_id': update.message.from_user['id'],
+                'location': location,
+                'things': [],
+                'priority_users': []
+            }
+        file.seek(0)
+        json.dump(descriptions, file, ensure_ascii=False, indent=4)
+    update.message.reply_text(
+        text='Отлично! Теперь можешь приступить к поиску и добавелнию вещей.',
+        reply_markup=ReplyKeyboardMarkup(
+            reply_keyboard, one_time_keyboard=True,
+        ),
+    )
+    return THING 
 
 def get_photo(update, context):
     img = update.message.photo[-1].get_file()
@@ -228,17 +265,18 @@ def main():
         with open('media/descriptions.json', mode='x') as file:
             file.write('{}')
     except FileExistsError:
-        pass
+        pass  
 
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('start', start)],
         states={
             CHOOSING: [
                 MessageHandler(
-                    Filters.regex('^(Добавить вещь|Найти вещь)$'),
+                    Filters.regex('^(Добавить вещь|Найти вещь|Поделиться локацией)$'),
                     handling_thing
                 )
             ],
+            LOCATION: [MessageHandler(Filters.location, get_location)],
             THING: [MessageHandler(Filters.text, handling_thing)],
             PHOTO: [MessageHandler(Filters.photo, get_photo)],
             TITLE: [MessageHandler(Filters.text, thing_title)],
