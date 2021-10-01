@@ -20,12 +20,12 @@ def get_priority_users(descriptions, user):
         return priority_users
 
 
-def get_thing_attrs(descriptions):
-    user = random.choice(list(descriptions.keys()))
-    thing = random.choice(descriptions[user]['things'])
+def get_thing_attrs(user_desc):
+    thing_place = random.randint(0, len(user_desc['things']) - 1)
+    thing = user_desc['things'][thing_place]
     with open(thing['img_path'], mode='rb') as file:
         img = file.read()
-    return thing, img, user
+    return thing, img, thing_place
 
 
 def start(update, context):
@@ -39,6 +39,10 @@ def start(update, context):
                 reply_keyboard, one_time_keyboard=True,
             ),
         )
+        with open('media/descriptions.json', mode='r') as file:
+            descriptions = json.load(file)
+        context.user_data['descriptions'] = descriptions
+        context.user_data['priority_users'] = get_priority_users(descriptions, update.message.from_user.username)
         return THING
     else:
         update.message.reply_text(
@@ -68,60 +72,72 @@ def handling_thing(update, context):
     elif update.message.text == 'Найти вещь':
 
         reply_keyboard = [['Обменяться', 'Добавить вещь', 'Найти вещь']]
+        
         with open('media/descriptions.json', mode='r') as file:
-            descriptions = json.load(file)
-        priority_users = get_priority_users(descriptions, user)
+            users = json.load(file)
 
-        if priority_users:  # Сейчас работает так, что показывает только вещи приоретеных пользователей, если они есть
-            for priority_user in priority_users:
-                descriptions = {
-                    priority_user: descriptions[priority_user]
-                }
-                thing, img, user_of_thing = get_thing_attrs(descriptions)
-                context.user_data.clear()
-                context.user_data[user_of_thing] = user_of_thing
-                update.message.reply_text(
-                    text=thing['title'],
-                    reply_markup=ReplyKeyboardRemove(),
-                )
-                update.message.reply_photo(
-                    photo=img,
-                    reply_markup=ReplyKeyboardMarkup(
-                        reply_keyboard, one_time_keyboard=True,
-                    ),
-                )
+        if user not in users:
+            update.message.reply_text(
+                text='Для доступа к другим вещам, сначала добавь свою.',
+                reply_markup=ReplyKeyboardMarkup(
+                    [['Добавить вещь']], one_time_keyboard=True,
+                ),
+            )
+            return THING
+
+        try:
+            del context.user_data['descriptions'][user]
+        except KeyError:
+            pass
+
+        print(context.user_data['descriptions'])
+        print(context.user_data['priority_users'])
+
+        if context.user_data['priority_users']:
+            user_to_show = list(context.user_data['priority_users'])[0]
         else:
             try:
-                del descriptions[user]
-            except KeyError:
+                user_to_show = random.choice(list(context.user_data['descriptions'].keys()))
+            except IndexError:
                 update.message.reply_text(
-                    text='Для доступа к другим вещам, сначала добавь свою.',
+                    text='Больше вещей нет',
                     reply_markup=ReplyKeyboardMarkup(
                         [['Добавить вещь']], one_time_keyboard=True,
                     ),
                 )
                 return THING
+            
 
-            thing, img, user_of_thing = get_thing_attrs(descriptions)
-            context.user_data.clear()
-            context.user_data[user_of_thing] = user_of_thing
-            update.message.reply_text(
-                text=thing['title'],
-                reply_markup=ReplyKeyboardRemove(),
-            )
-            update.message.reply_photo(
-                photo=img,
-                reply_markup=ReplyKeyboardMarkup(
-                    reply_keyboard, one_time_keyboard=True,
-                ),
-            )
-            return THING
+        user_desc = context.user_data['descriptions'][user_to_show]
+        thing, img, thing_place = get_thing_attrs(user_desc)
+
+        context.user_data['user_of_thing'] = user_to_show
+        update.message.reply_text(
+            text=thing['title'],
+            reply_markup=ReplyKeyboardRemove(),
+        )
+        update.message.reply_photo(
+            photo=img,
+            reply_markup=ReplyKeyboardMarkup(
+                reply_keyboard, one_time_keyboard=True,
+            ),
+        )
+        del context.user_data['descriptions'][user_to_show]['things'][thing_place]
+        
+        if not context.user_data['descriptions'][user_to_show]['things']:
+            del context.user_data['descriptions'][user_to_show]
+            context.user_data['priority_users'].discard(user_to_show)
+
+        print(context.user_data['descriptions'])
+        print(context.user_data['priority_users'])
+
+        return THING
 
     elif update.message.text == 'Обменяться':
         reply_keyboard = [['Добавить вещь', 'Найти вещь']]
         with open('media/descriptions.json', mode='r+') as file:
             descriptions = json.load(file)
-            user_to_change = list(context.user_data.keys())[0]
+            user_to_change = context.user_data['user_of_thing']
             user_to_change_chat_id = descriptions[user_to_change]["chat_id"]
             if user_to_change in get_priority_users(descriptions, update.effective_user.username):
                 context.bot.send_message(
@@ -192,6 +208,8 @@ def thing_title(update, context):
             }
 
         file.seek(0)
+        context.user_data['descriptions'] = descriptions
+        context.user_data['priority_users'] = get_priority_users(descriptions, user)
         json.dump(descriptions, file, ensure_ascii=False, indent=4)
 
     return CHOOSING
