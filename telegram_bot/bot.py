@@ -29,7 +29,8 @@ def get_thing_attrs(user_desc):
 
 
 def start(update, context):
-    if update.message.from_user.username:
+    user = update.message.from_user.username
+    if user:
         reply_keyboard = [['Добавить вещь', 'Найти вещь']]
         update.message.reply_text(
             text="Привет! Я помогу тебе обменять что-то ненужное на очень нужное.\n"
@@ -42,7 +43,10 @@ def start(update, context):
         with open('media/descriptions.json', mode='r') as file:
             descriptions = json.load(file)
         context.user_data['descriptions'] = descriptions
-        context.user_data['priority_users'] = get_priority_users(descriptions, update.message.from_user.username)
+        context.user_data['priority_users'] = get_priority_users(
+            descriptions,
+            user
+        )
         return THING
     else:
         update.message.reply_text(
@@ -72,7 +76,7 @@ def handling_thing(update, context):
     elif update.message.text == 'Найти вещь':
 
         reply_keyboard = [['Обменяться', 'Добавить вещь', 'Найти вещь']]
-        
+
         with open('media/descriptions.json', mode='r') as file:
             users = json.load(file)
 
@@ -90,9 +94,6 @@ def handling_thing(update, context):
         except KeyError:
             pass
 
-        print(context.user_data['descriptions'])
-        print(context.user_data['priority_users'])
-
         if context.user_data['priority_users']:
             user_to_show = list(context.user_data['priority_users'])[0]
         else:
@@ -106,7 +107,6 @@ def handling_thing(update, context):
                     ),
                 )
                 return THING
-            
 
         user_desc = context.user_data['descriptions'][user_to_show]
         thing, img, thing_place = get_thing_attrs(user_desc)
@@ -123,13 +123,10 @@ def handling_thing(update, context):
             ),
         )
         del context.user_data['descriptions'][user_to_show]['things'][thing_place]
-        
+
         if not context.user_data['descriptions'][user_to_show]['things']:
             del context.user_data['descriptions'][user_to_show]
             context.user_data['priority_users'].discard(user_to_show)
-
-        print(context.user_data['descriptions'])
-        print(context.user_data['priority_users'])
 
         return THING
 
@@ -143,7 +140,7 @@ def handling_thing(update, context):
                 context.bot.send_message(
                     chat_id=update.effective_chat.id,
                     text='Ура! Можете связаться с пользователем @{} для обмена.'.format(
-                        user_to_change   
+                        user_to_change
                     )
                 )
                 context.bot.send_message(chat_id=user_to_change_chat_id,
@@ -152,7 +149,9 @@ def handling_thing(update, context):
                     )
                 )
             else:
-                descriptions[user_to_change]["priority_users"].append(update.effective_user.username)
+                descriptions[user_to_change]["priority_users"].append(
+                    update.effective_user.username
+                )
                 file.seek(0)
                 json.dump(descriptions, file, ensure_ascii=False, indent=4)
                 update.message.reply_text(
@@ -209,7 +208,10 @@ def thing_title(update, context):
 
         file.seek(0)
         context.user_data['descriptions'] = descriptions
-        context.user_data['priority_users'] = get_priority_users(descriptions, user)
+        context.user_data['priority_users'] = get_priority_users(
+            descriptions,
+            user
+        )
         json.dump(descriptions, file, ensure_ascii=False, indent=4)
 
     return CHOOSING
@@ -233,7 +235,8 @@ def main():
         states={
             CHOOSING: [
                 MessageHandler(
-                    Filters.regex('^(Добавить вещь|Найти вещь)$'), handling_thing
+                    Filters.regex('^(Добавить вещь|Найти вещь)$'),
+                    handling_thing
                 )
             ],
             THING: [MessageHandler(Filters.text, handling_thing)],
