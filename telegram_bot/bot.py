@@ -46,6 +46,7 @@ def start(update, context):
             text="Привет! Я помогу тебе обменять что-то ненужное на очень нужное.\n"
                  "Чтобы разместить вещь к обмену нажми - Добавить вещь\n"
                  "Если ты уже размещал вещи и хочешь найти вариант для обмена нажми - Найти вещь\n"
+                 "Чтобы перезапустить бот, набери /start\n"
                  "Если ты хочешь видеть расстояние до вещи жми - Поделиться локацией",
             reply_markup=ReplyKeyboardMarkup(
                 reply_keyboard, one_time_keyboard=True,
@@ -274,6 +275,7 @@ def main():
 
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('start', start)],
+        allow_reentry=True,
         states={
             CHOOSING: [
                 MessageHandler(
