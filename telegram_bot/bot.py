@@ -105,6 +105,7 @@ def handling_thing(update, context):
             try:
                 user_to_show = random.choice(list(context.user_data['descriptions'].keys()))
             except IndexError:
+                write_to_context_user_data(context, user)
                 update.message.reply_text(
                     text='Больше вещей нет',
                     reply_markup=ReplyKeyboardMarkup(
