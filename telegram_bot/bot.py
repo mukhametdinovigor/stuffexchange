@@ -100,7 +100,7 @@ def handling_thing(update, context):
             except IndexError:
                 write_to_context_user_data(context, user)
                 update.message.reply_text(
-                    text='Больше вещей нет',
+                    text='Больше вещей нет. Для того, чтобы посмотреть вещи ещё раз, нажмите Посмотреть ещё раз',
                     reply_markup=ReplyKeyboardMarkup(
                         [['Добавить вещь', 'Посмотреть ещё раз']], one_time_keyboard=True,
                     ),
@@ -110,6 +110,8 @@ def handling_thing(update, context):
         user_desc = context.user_data['descriptions'][user_to_show]
         thing, img, thing_place = get_thing_attrs(user_desc)
         context.user_data['user_of_thing'] = user_to_show
+        context.user_data['thing'] = None
+        context.user_data['thing'] = thing
         update.message.reply_text(
             text=thing['title'],
             reply_markup=ReplyKeyboardRemove(),
@@ -134,21 +136,36 @@ def handling_thing(update, context):
             user_to_change = context.user_data['user_of_thing']
             user_to_change_chat_id = descriptions[user_to_change]["chat_id"]
             if user_to_change in get_priority_users(descriptions, update.effective_user.username):
+                liked_things = list(set([list(thing.items())[0][1] for thing in context.bot_data['things_title_for_change'] if list(thing.items())[0][0] == user]))
                 context.bot.send_message(
                     chat_id=update.effective_chat.id,
-                    text='Ура! Можете связаться с пользователем @{} для обмена.'.format(
-                        user_to_change
-                    )
+                    text='Ура! Можете связаться с пользователем @{} для обмена его вещи - {}, которая понравилась вам,'
+                         ' на одну из ваших вещей - {}, которая понравилась ему.'.format(
+                            user_to_change,
+                            context.user_data['thing']['title'],
+                            ', '.join(liked_things)
+                        )
                 )
-                context.bot.send_message(chat_id=user_to_change_chat_id,
-                                         text='Ура! Можете связаться с пользователем @{} для обмена.'.format(
-                                             update.effective_chat.username
-                                         )
-                                         )
+                context.bot.send_message(
+                    chat_id=user_to_change_chat_id,
+                    text='Ура! Можете связаться с пользователем @{} для обмена одной из его вещей - {},'
+                         ' которые вам понравились, на вашу вещь - {}, которая понравилась ему.'.format(
+                            update.effective_chat.username,
+                            ', '.join(liked_things),
+                            context.user_data['thing']['title'],
+                        )
+                )
             else:
-                descriptions[user_to_change]["priority_users"].append(
-                    update.effective_user.username
-                )
+                if update.effective_user.username not in descriptions[user_to_change]["priority_users"]:
+                    descriptions[user_to_change]["priority_users"].append(
+                        update.effective_user.username
+                    )
+                thing_title_for_change = context.user_data['thing']['title']
+                try:
+                    context.bot_data['things_title_for_change'].append({context.user_data['user_of_thing']: thing_title_for_change})
+                except KeyError:
+                    context.bot_data['things_title_for_change'] = [{context.user_data['user_of_thing']: thing_title_for_change}]
+
                 file.seek(0)
                 json.dump(descriptions, file, ensure_ascii=False, indent=4)
                 update.message.reply_text(
