@@ -46,8 +46,8 @@ def start(update, context):
             text="Привет! Я помогу тебе обменять что-то ненужное на очень нужное.\n"
                  "Чтобы разместить вещь к обмену нажми - Добавить вещь\n"
                  "Если ты уже размещал вещи и хочешь найти вариант для обмена нажми - Найти вещь\n"
-                 "Чтобы перезапустить бот, набери /start\n"
-                 "Если ты хочешь видеть расстояние до вещи жми - Поделиться локацией",
+                 "Если ты хочешь видеть расстояние до вещи жми - Поделиться локацией\n"
+                 "Чтобы перезапустить бот, набери /start",
             reply_markup=ReplyKeyboardMarkup(
                 reply_keyboard, one_time_keyboard=True,
             ),
@@ -59,14 +59,6 @@ def start(update, context):
             text='Заполни свой username в настройках Telegram и нажми /start',
             reply_markup=ReplyKeyboardRemove()
         )
-
-
-def cancel(update, context):
-    user = update.message.from_user
-    update.message.reply_text(
-        'Bye! I hope we can talk again some day.',
-        reply_markup=ReplyKeyboardRemove()
-    )
 
 
 def handling_thing(update, context):
@@ -117,7 +109,6 @@ def handling_thing(update, context):
 
         user_desc = context.user_data['descriptions'][user_to_show]
         thing, img, thing_place = get_thing_attrs(user_desc)
-
         context.user_data['user_of_thing'] = user_to_show
         update.message.reply_text(
             text=thing['title'],
@@ -134,7 +125,6 @@ def handling_thing(update, context):
         if not context.user_data['descriptions'][user_to_show]['things']:
             del context.user_data['descriptions'][user_to_show]
             context.user_data['priority_users'].discard(user_to_show)
-
         return THING
 
     elif update.message.text == 'Обменяться':
@@ -151,10 +141,10 @@ def handling_thing(update, context):
                     )
                 )
                 context.bot.send_message(chat_id=user_to_change_chat_id,
-                    text='Ура! Можете связаться с пользователем @{} для обмена.'.format(
-                        update.effective_chat.username
-                    )
-                )
+                                         text='Ура! Можете связаться с пользователем @{} для обмена.'.format(
+                                             update.effective_chat.username
+                                         )
+                                         )
             else:
                 descriptions[user_to_change]["priority_users"].append(
                     update.effective_user.username
@@ -168,12 +158,12 @@ def handling_thing(update, context):
                     ),
                 )
                 return THING
-    
+
     elif update.message.text == 'Поделиться локацией':
         update.message.reply_text(
-                    text='Отправьте свою геопозицию',
-                    reply_markup=ReplyKeyboardRemove()
-                )
+            text='Отправьте свою геопозицию',
+            reply_markup=ReplyKeyboardRemove()
+        )
         return LOCATION
 
 
@@ -199,12 +189,13 @@ def get_location(update, context):
         file.seek(0)
         json.dump(descriptions, file, ensure_ascii=False, indent=4)
     update.message.reply_text(
-        text='Отлично! Теперь можешь приступить к поиску и добавелнию вещей.',
+        text='Отлично! Теперь можешь приступить к поиску и добавлению вещей.',
         reply_markup=ReplyKeyboardMarkup(
             reply_keyboard, one_time_keyboard=True,
         ),
     )
-    return THING 
+    return THING
+
 
 def get_photo(update, context):
     img = update.message.photo[-1].get_file()
@@ -213,9 +204,7 @@ def get_photo(update, context):
     basename = datetime.now().strftime('%y%m%d_%H%M%S')
     img_name = ''.join([basename, extension])
     img_path = img.download(Path('media/images', img_name))
-
     context.user_data['img_path'] = str(img_path)
-
     update.message.reply_text(
         'Пришли название вещи'
     )
@@ -271,7 +260,7 @@ def main():
         with open('media/descriptions.json', mode='x') as file:
             file.write('{}')
     except FileExistsError:
-        pass  
+        pass
 
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('start', start)],
@@ -288,7 +277,7 @@ def main():
             PHOTO: [MessageHandler(Filters.photo, get_photo)],
             TITLE: [MessageHandler(Filters.text, thing_title)],
         },
-        fallbacks=[CommandHandler('cancel', cancel)],
+        fallbacks=[],
     )
 
     dispatcher.add_handler(conv_handler)
