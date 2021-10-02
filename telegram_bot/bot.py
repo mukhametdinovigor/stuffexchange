@@ -28,6 +28,16 @@ def get_thing_attrs(user_desc):
     return thing, img, thing_place
 
 
+def write_to_context_user_data(context, user):
+    with open('media/descriptions.json', mode='r') as file:
+        descriptions = json.load(file)
+    context.user_data['descriptions'] = descriptions
+    context.user_data['priority_users'] = get_priority_users(
+        descriptions,
+        user
+    )
+
+
 def start(update, context):
     user = update.message.from_user.username
     if user:
@@ -41,13 +51,7 @@ def start(update, context):
                 reply_keyboard, one_time_keyboard=True,
             ),
         )
-        with open('media/descriptions.json', mode='r') as file:
-            descriptions = json.load(file)
-        context.user_data['descriptions'] = descriptions
-        context.user_data['priority_users'] = get_priority_users(
-            descriptions,
-            user
-        )
+        write_to_context_user_data(context, user)
         return THING
     else:
         update.message.reply_text(
@@ -74,7 +78,7 @@ def handling_thing(update, context):
         )
         return PHOTO
 
-    elif update.message.text == 'Найти вещь':
+    elif update.message.text == 'Найти вещь' or update.message.text == 'Посмотреть ещё раз':
 
         reply_keyboard = [['Обменяться', 'Добавить вещь', 'Найти вещь']]
 
@@ -104,7 +108,7 @@ def handling_thing(update, context):
                 update.message.reply_text(
                     text='Больше вещей нет',
                     reply_markup=ReplyKeyboardMarkup(
-                        [['Добавить вещь']], one_time_keyboard=True,
+                        [['Добавить вещь', 'Посмотреть ещё раз']], one_time_keyboard=True,
                     ),
                 )
                 return THING
@@ -272,7 +276,7 @@ def main():
         states={
             CHOOSING: [
                 MessageHandler(
-                    Filters.regex('^(Добавить вещь|Найти вещь|Поделиться локацией)$'),
+                    Filters.regex('^(Добавить вещь|Найти вещь|Поделиться локацией|Посмотреть ещё раз)$'),
                     handling_thing
                 )
             ],
