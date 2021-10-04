@@ -3,6 +3,7 @@ import random
 from datetime import datetime
 from pathlib import Path
 
+from geopy import distance
 from environs import Env
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import (CommandHandler, ConversationHandler, Filters,
@@ -38,6 +39,16 @@ def write_to_context_user_data(context, user):
     )
 
 
+def get_distance(user_coords, user_to_show_coords):
+    return distance.distance(user_coords, user_to_show_coords).km
+
+
+def get_coords(context, user):
+    coords = list(context.user_data['descriptions'][user]['location'].values())[1], \
+             list(context.user_data['descriptions'][user]['location'].values())[0]
+    return coords
+
+
 def start(update, context):
     user = update.message.from_user.username
     if user:
@@ -63,7 +74,6 @@ def start(update, context):
 
 def handling_thing(update, context):
     user = update.message.from_user['username']
-
     if update.message.text == 'Добавить вещь':
         update.message.reply_text(
             text='Пришли фото вещи',
@@ -72,12 +82,15 @@ def handling_thing(update, context):
         return PHOTO
 
     elif update.message.text == 'Найти вещь' or update.message.text == 'Посмотреть ещё раз':
-
         reply_keyboard = [['Обменяться', 'Добавить вещь', 'Найти вещь']]
 
         with open('media/descriptions.json', mode='r') as file:
             users = json.load(file)
-
+        try:
+            user_coords = list(users[user]['location'].values())[1], list(users[user]['location'].values())[0]
+            context.user_data['user_coords'] = user_coords
+        except AttributeError:
+            pass
         if user not in users:
             update.message.reply_text(
                 text='Для доступа к другим вещам, сначала добавь свою.',
@@ -112,10 +125,20 @@ def handling_thing(update, context):
         context.user_data['user_of_thing'] = user_to_show
         context.user_data['thing'] = None
         context.user_data['thing'] = thing
+
         update.message.reply_text(
             text=thing['title'],
             reply_markup=ReplyKeyboardRemove(),
         )
+        try:
+            user_to_show_coords = get_coords(context, user_to_show)
+            distance = get_distance(context.user_data['user_coords'], user_to_show_coords)
+            update.message.reply_text(
+                text=f'Расстояние до вещи {distance:.2f}км',
+                reply_markup=ReplyKeyboardRemove(),
+            )
+        except (AttributeError, KeyError):
+            pass
         update.message.reply_photo(
             photo=img,
             reply_markup=ReplyKeyboardMarkup(
