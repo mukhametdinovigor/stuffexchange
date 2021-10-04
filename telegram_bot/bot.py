@@ -60,7 +60,7 @@ def start(update, context):
                  "Если ты хочешь видеть расстояние до вещи жми - Поделиться локацией\n"
                  "Чтобы перезапустить бот, набери /start",
             reply_markup=ReplyKeyboardMarkup(
-                reply_keyboard, one_time_keyboard=True,
+                reply_keyboard, one_time_keyboard=True, resize_keyboard=True
             ),
         )
         write_to_context_user_data(context, user)
@@ -95,7 +95,7 @@ def handling_thing(update, context):
             update.message.reply_text(
                 text='Для доступа к другим вещам, сначала добавь свою.',
                 reply_markup=ReplyKeyboardMarkup(
-                    [['Добавить вещь']], one_time_keyboard=True,
+                    [['Добавить вещь']], one_time_keyboard=True, resize_keyboard=True
                 ),
             )
             return THING
@@ -115,7 +115,7 @@ def handling_thing(update, context):
                 update.message.reply_text(
                     text='Больше вещей нет. Для того, чтобы посмотреть вещи ещё раз, нажмите Посмотреть ещё раз',
                     reply_markup=ReplyKeyboardMarkup(
-                        [['Добавить вещь', 'Посмотреть ещё раз']], one_time_keyboard=True,
+                        [['Добавить вещь', 'Посмотреть ещё раз']], one_time_keyboard=True, resize_keyboard=True
                     ),
                 )
                 return THING
@@ -142,7 +142,7 @@ def handling_thing(update, context):
         update.message.reply_photo(
             photo=img,
             reply_markup=ReplyKeyboardMarkup(
-                reply_keyboard, one_time_keyboard=True,
+                reply_keyboard, one_time_keyboard=True, resize_keyboard=True
             ),
         )
         del context.user_data['descriptions'][user_to_show]['things'][thing_place]
@@ -194,7 +194,7 @@ def handling_thing(update, context):
                 update.message.reply_text(
                     text='Вы выбрали вещь для обмена.',
                     reply_markup=ReplyKeyboardMarkup(
-                        reply_keyboard, one_time_keyboard=True,
+                        reply_keyboard, one_time_keyboard=True, resize_keyboard=True
                     ),
                 )
                 return THING
@@ -231,7 +231,7 @@ def get_location(update, context):
     update.message.reply_text(
         text='Отлично! Теперь можешь приступить к поиску и добавлению вещей.',
         reply_markup=ReplyKeyboardMarkup(
-            reply_keyboard, one_time_keyboard=True,
+            reply_keyboard, one_time_keyboard=True, resize_keyboard=True
         ),
     )
     return THING
@@ -262,7 +262,7 @@ def thing_title(update, context):
     update.message.reply_text(
         text='Вы можете найти вещь или добавить еще одну вещь',
         reply_markup=ReplyKeyboardMarkup(
-            reply_keyboard, one_time_keyboard=True,
+            reply_keyboard, one_time_keyboard=True, resize_keyboard=True
         ),
     )
     with open('media/descriptions.json', mode='r+') as file:
