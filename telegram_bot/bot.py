@@ -52,7 +52,7 @@ def get_coords(context, user):
 def start(update, context):
     user = update.message.from_user.username
     if user:
-        reply_keyboard = [['Добавить вещь', 'Найти вещь', 'Поделиться локацией']]
+        reply_keyboard = [['Добавить вещь', 'Найти вещь'], ['Поделиться локацией']]
         update.message.reply_text(
             text="Привет! Я помогу тебе обменять что-то ненужное на очень нужное.\n"
                  "Чтобы разместить вещь к обмену нажми - Добавить вещь\n"
@@ -82,7 +82,7 @@ def handling_thing(update, context):
         return PHOTO
 
     elif update.message.text == 'Найти вещь' or update.message.text == 'Посмотреть ещё раз':
-        reply_keyboard = [['Обменяться', 'Добавить вещь', 'Найти вещь']]
+        reply_keyboard = [['Добавить вещь', 'Найти вещь'], ['Обменяться']]
 
         with open('media/descriptions.json', mode='r') as file:
             users = json.load(file)
