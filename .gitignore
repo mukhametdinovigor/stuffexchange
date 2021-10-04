@@ -1,3 +1,6 @@
+telegram_bot/media/
+.DS_Store
+
 # Default ignored files
 /shelf/
 /static/
