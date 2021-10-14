@@ -86,11 +86,6 @@ def handling_thing(update, context):
 
         with open('media/descriptions.json', mode='r') as file:
             users = json.load(file)
-        try:
-            user_coords = list(users[user]['location'].values())[1], list(users[user]['location'].values())[0]
-            context.user_data['user_coords'] = user_coords
-        except AttributeError:
-            pass
         if user not in users:
             update.message.reply_text(
                 text='Для доступа к другим вещам, сначала добавь свою.',
@@ -99,6 +94,12 @@ def handling_thing(update, context):
                 ),
             )
             return THING
+        try:
+            user_coords = list(users[user]['location'].values())[1], list(users[user]['location'].values())[0]
+            context.user_data['user_coords'] = user_coords
+        except AttributeError:
+            pass
+
 
         try:
             del context.user_data['descriptions'][user]
